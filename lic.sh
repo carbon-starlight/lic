@@ -40,8 +40,138 @@ draw() {
     read -r -n 1 -s -p "" key
     printf ">$key<\n\r"
     # printf $key | hexdump -C
-    # echo TTT
-    # Special cases:
+    
+    if [ "$key" = '' ]; then
+        if [ "$dirorf" = 'd' ]; then
+            cd "$selected"
+            draw
+        else
+            showmenu
+        fi
+    fi
+
+    if [ "$key" = $'\x1b' ]; then
+        echo "ESC"
+        # is just esc?
+        read -t 0.1 -r -n 2 -s -p "" key
+        if [ "$key" = $'' ]; then
+            echo "just ESC"
+        else
+            echo "key starting with esc"
+            notify-send $key
+        
+        
+        
+        
+        
+        
+        
+            if [ "$key" = '[B' ]; then
+                printf "DOWN\n\r"
+                CURSOR=$((CURSOR + 1))
+                draw
+                notify-send "continued"
+            elif [ "$key" = '[A' ]; then
+                echo "UP"
+                CURSOR=$((CURSOR - 1))
+                draw
+            elif [ "$key" == '[C' ]; then
+                echo "RIGHT"
+                ((sorting++))
+                draw
+            elif [ "$key" == '[D' ]; then
+                echo "LEFT"
+                ((sorting--))
+                draw
+
+            elif [ "$key" == '[5' ]; then
+                echo "PGUP"
+                CURSOR=$((CURSOR - ROWS + 5))
+                draw
+            elif [ "$key" == '[6' ]; then
+                echo "PGDN"
+                notify-send "PGDN"
+                CURSOR=$((CURSOR + ROWS - 5))
+                draw
+                notify-send "continued???"
+
+            elif [ "$key" = '' ]; then
+                if [ "$dirorf" = 'd' ]; then
+                    cd "$selected"
+                    draw
+                else
+                    showmenu
+                fi
+
+            elif [ $key == $'\x1b[2~' ]; then
+                echo "F2"
+            elif [ $key == 'OR' ]; then
+                echo "F3"
+                if [[ $(file "$selected") =~ [tT]ext ]]; then
+                    less --prompt="🭪 Press q to exit, arrows to scroll 🭨🭪 %l / %L 🭨" -N "$selected"
+                else
+                    hexdump -C "$selected" | less --prompt="🭪 Press q to exit, arrows to scroll 🭨🭪 %l / %L 🭨" -N
+                fi
+                draw
+            elif [ $key == 'OS' ]; then
+                echo "F4"
+                vi -y "$selected"
+                draw
+            elif [ $key == 'OT' ]; then
+                echo "F5"
+            elif [ $key == $'\x1b[6~' ]; then
+                echo "F6"
+            elif [ $key == $'\x1b[7~' ]; then
+                echo "F7"
+            elif [ $key == $'\x1b[8~' ]; then
+                echo "F8"
+            elif [ $key == $'\x1b[9~' ]; then
+                echo "F9"
+            elif [ $key == $'\x1b[10~' ]; then
+                echo "F10"
+            elif [ $key == $'' ]; then
+                echo "ESC"
+                exit
+            else
+                :
+            fi
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        fi
+    else
+        echo "$key"
+        # Input was a search query
+        # bs
+        # handled in label-01
+        searchq=$searchq$key
+        files1c="$(ls -a1 $sortword)"
+        # echo "$files1c" | less
+        line_number=$(awk "/^${searchq}/{print NR; exit}" <<< "$files1c")
+        # [ -z "$line_number" ] && echo "No line starts with '${searchq}'" || echo "First line starting with 'xyz': $line_number"
+        CURSOR=$((line_number-1))
+        # notify-send "$searchq; $key"
+        draw
+    fi
+
+
+
+
+
+
+
     if [ "$key" = '' ]; then
         # echo "ENTER"
         notify-send "ENT"
@@ -66,83 +196,8 @@ draw() {
         key=$(dd bs=1 count=2 2>/dev/null)
     fi
     # printf ">>$key<<\n\r"
-    if [ "$key" = '[B' ]; then
-        printf "DOWN\n\r"
-        CURSOR=$((CURSOR + 1))
-        draw
-        notify-send "continued"
-    elif [ "$key" = '[A' ]; then
-        echo "UP"
-        CURSOR=$((CURSOR - 1))
-        draw
-    elif [ "$key" == '[C' ]; then
-        echo "RIGHT"
-        ((sorting++))
-        draw
-    elif [ "$key" == '[D' ]; then
-        echo "LEFT"
-        ((sorting--))
-        draw
-    elif [ "$key" == '[5' ]; then
-        echo "PGUP"
-        CURSOR=$((CURSOR - ROWS + 5))
-        draw
-    elif [ "$key" == '[6' ]; then
-        echo "PGDN"
-        notify-send "PGDN"
-        CURSOR=$((CURSOR + ROWS - 5))
-        draw
-        notify-send "continued???"
-    elif [ "$key" = '' ]; then
-        # echo "ENTER"
-        # notify-send "$dirorf"
-        if [ "$dirorf" = 'd' ]; then
-            cd "$selected"
-            draw
-        else
-            # echo "-----"
-            showmenu
-        fi
-    elif [ $key == $'\x1b[2~' ]; then
-        echo "F2"
-    elif [ $key == 'OR' ]; then
-        echo "F3"
-        if [[ $string =~ [tT]ext ]]; then
-            less --prompt="🭪 Press q to exit, arrows to scroll 🭨🭪 %l / %L 🭨" -N "$selected"
-        else
-            hexdump -C "$selected" | less --prompt="🭪 Press q to exit, arrows to scroll 🭨🭪 %l / %L 🭨" -N
-        fi
-        draw
-    elif [ $key == $'\x1b[4~' ]; then
-        echo "F4"
-    elif [ $key == $'\x1b[5~' ]; then
-        echo "F5"
-    elif [ $key == $'\x1b[6~' ]; then
-        echo "F6"
-    elif [ $key == $'\x1b[7~' ]; then
-        echo "F7"
-    elif [ $key == $'\x1b[8~' ]; then
-        echo "F8"
-    elif [ $key == $'\x1b[9~' ]; then
-        echo "F9"
-    elif [ $key == $'\x1b[10~' ]; then
-        echo "F10"
-    elif [ $key == $'' ]; then
-        echo "ESC"
-        exit
-    else
-        # Input was a search query
-            # bs
-            # handled in label-01
-        searchq=$searchq$key
-        files1c="$(ls -a1 $sortword)"
-        # echo "$files1c" | less
-        line_number=$(awk "/^${searchq}/{print NR; exit}" <<< "$files1c")
-        # [ -z "$line_number" ] && echo "No line starts with '${searchq}'" || echo "First line starting with 'xyz': $line_number"
-        CURSOR=$((line_number-1))
-        # notify-send "$searchq; $key"
-        draw
-    fi
+
+
     stty -raw echo
 }
 
