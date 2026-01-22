@@ -37,132 +37,100 @@ draw() {
     key=''
     # echo q | read
     # echo awarting read
-    read -r -n 1 -s -p "" key
-    printf ">$key<\n\r"
+    # read -r -n 1 -s -p "" key
+
+    saved_tty_settings=$(stty -g)
+    stty -icanon -echo -isig min 100 time 1 -istrip
+    set -- $(dd bs=100 count=1 2> /dev/null | od -vAn -to1)
+    stty "$saved_tty_settings" # restore
+
+    printf "| $1, $2, $3, $4, $5, $6 |"
+    printf ">$1<\n\r"
     # printf $key | hexdump -C
-    
-    if [ "$key" = '' ]; then
+
+    if [ "$1" = '015' ]; then
+        # ENTER
         if [ "$dirorf" = 'd' ]; then
             cd "$selected"
+            # notify-send "III"
             draw
         else
             showmenu
         fi
-    fi
+    elif [ "$1" = '033' ] && [ "$2" = '' ]; then
+        # ESC
+        stty echo
+        exit
+    elif [ "$3" = '101' ]; then
+        # UP
+        echo "UP"
+        CURSOR=$((CURSOR - 1))
+        draw
+    elif [ "$3" = '102' ]; then
+        printf "DOWN\n\r"
+        CURSOR=$((CURSOR + 1))
+        draw
+        notify-send "continued"
+    elif [ "$3" == '103' ]; then
+        echo "RIGHT"
+        ((sorting++))
+        draw
+    elif [ "$3" == '104' ]; then
+        echo "LEFT"
+        ((sorting--))
+        draw
 
-    if [ "$key" = $'\x1b' ]; then
-        echo "ESC"
-        # is just esc?
-        read -t 0.1 -r -n 2 -s -p "" key
-        if [ "$key" = $'' ]; then
-            echo "just ESC"
+    elif [ "$3$4" == '065176' ]; then
+        echo "PGUP"
+        CURSOR=$((CURSOR - ROWS + 5))
+        draw
+    elif [ "$3$4" == '066176' ]; then
+        echo "PGDN"
+        notify-send "PGDN"
+        CURSOR=$((CURSOR + ROWS - 5))
+        draw
+        notify-send "continued???"
+
+    # elif [ "$1" == '012' ]; then
+    #     if [ "$dirorf" = 'd' ]; then
+    #         cd "$selected"
+    #         draw
+    #     else
+    #         showmenu
+    #     fi
+
+    elif [ "$3" == '121' ]; then
+        echo "F2"
+    elif [ "$3" == '122' ]; then
+        echo "F3"
+        if [[ $(file "$selected") =~ [tT]ext ]]; then
+            less --prompt="🭪 Press q to exit, arrows to scroll 🭨🭪 %l / %L 🭨" -N "$selected"
         else
-            echo "key starting with esc"
-            notify-send $key
-        
-        
-        
-        
-        
-        
-        
-            if [ "$key" = '[B' ]; then
-                printf "DOWN\n\r"
-                CURSOR=$((CURSOR + 1))
-                draw
-                notify-send "continued"
-            elif [ "$key" = '[A' ]; then
-                echo "UP"
-                CURSOR=$((CURSOR - 1))
-                draw
-            elif [ "$key" == '[C' ]; then
-                echo "RIGHT"
-                ((sorting++))
-                draw
-            elif [ "$key" == '[D' ]; then
-                echo "LEFT"
-                ((sorting--))
-                draw
-
-            elif [ "$key" == '[5' ]; then
-                echo "PGUP"
-                CURSOR=$((CURSOR - ROWS + 5))
-                draw
-            elif [ "$key" == '[6' ]; then
-                echo "PGDN"
-                notify-send "PGDN"
-                CURSOR=$((CURSOR + ROWS - 5))
-                draw
-                notify-send "continued???"
-
-            elif [ "$key" = '' ]; then
-                if [ "$dirorf" = 'd' ]; then
-                    cd "$selected"
-                    draw
-                else
-                    showmenu
-                fi
-
-            elif [ $key == $'\x1b[2~' ]; then
-                echo "F2"
-            elif [ $key == 'OR' ]; then
-                echo "F3"
-                if [[ $(file "$selected") =~ [tT]ext ]]; then
-                    less --prompt="🭪 Press q to exit, arrows to scroll 🭨🭪 %l / %L 🭨" -N "$selected"
-                else
-                    hexdump -C "$selected" | less --prompt="🭪 Press q to exit, arrows to scroll 🭨🭪 %l / %L 🭨" -N
-                fi
-                draw
-            elif [ $key == 'OS' ]; then
-                echo "F4"
-                vi -y "$selected"
-                draw
-            elif [ $key == 'OT' ]; then
-                echo "F5"
-            elif [ $key == $'\x1b[6~' ]; then
-                echo "F6"
-            elif [ $key == $'\x1b[7~' ]; then
-                echo "F7"
-            elif [ $key == $'\x1b[8~' ]; then
-                echo "F8"
-            elif [ $key == $'\x1b[9~' ]; then
-                echo "F9"
-            elif [ $key == $'\x1b[10~' ]; then
-                echo "F10"
-            elif [ $key == $'' ]; then
-                echo "ESC"
-                exit
-            else
-                :
-            fi
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+            hexdump -C "$selected" | less --prompt="🭪 Press q to exit, arrows to scroll 🭨🭪 %l / %L 🭨" -N
         fi
+        draw
+    elif [ "$3" == '123' ]; then
+        echo "F4"
+        vi -y "$selected"
+        draw
+
+    elif [ "$1" == '177' ]; then
+        notify-send "BACKSPACE"
+        # label-01
+        searchq="${searchq%?}"
+        draw
     else
-        echo "$key"
+        echo "e: $1 $2 $3 $4 $5 $6"
         # Input was a search query
         # bs
         # handled in label-01
-        searchq=$searchq$key
+        searchq=$searchq$(printf "\\$1")
         files1c="$(ls -a1 $sortword)"
         # echo "$files1c" | less
         line_number=$(awk "/^${searchq}/{print NR; exit}" <<< "$files1c")
         # [ -z "$line_number" ] && echo "No line starts with '${searchq}'" || echo "First line starting with 'xyz': $line_number"
         CURSOR=$((line_number-1))
-        # notify-send "$searchq; $key"
+        notify-send "$searchq; $1"
         draw
     fi
 
@@ -172,30 +140,30 @@ draw() {
 
 
 
-    if [ "$key" = '' ]; then
-        # echo "ENTER"
-        notify-send "ENT"
-    elif [ "$key" = '~' ]; then
-        # getting rid of a weird bug that causes 
-        # `read` being activated with remainants
-        # of last key press instead of waitng.
-        draw
-    elif [[ ${#key} == 1 && "$key" =~ ^[[:graph:]]$ ]]; then
-        # Is a single char for 🔎︎
-        :
-    elif [ $key = $'\x7f' ]; then
-        # notify-send "BACKSPACE"
-        # label-01
-        searchq="${searchq%?}"
-        draw
-    # elif [ $key == $'\x1b' ]; then
-    #     notify-send "ESC"
-    #     stty -raw echo
-    #     exit
-    else
-        key=$(dd bs=1 count=2 2>/dev/null)
-    fi
-    # printf ">>$key<<\n\r"
+    # if [ "$key" = '' ]; then
+    #     # echo "ENTER"
+    #     notify-send "ENT"
+    # elif [ "$key" = '~' ]; then
+    #     # getting rid of a weird bug that causes 
+    #     # `read` being activated with remainants
+    #     # of last key press instead of waitng.
+    #     draw
+    # elif [[ ${#key} == 1 && "$key" =~ ^[[:graph:]]$ ]]; then
+    #     # Is a single char for 🔎︎
+    #     :
+    # elif [ $key = $'\x7f' ]; then
+    #     # notify-send "BACKSPACE"
+    #     # label-01
+    #     searchq="${searchq%?}"
+    #     draw
+    # # elif [ $key == $'\x1b' ]; then
+    # #     notify-send "ESC"
+    # #     stty -raw echo
+    # #     exit
+    # else
+    #     key=$(dd bs=1 count=2 2>/dev/null)
+    # fi
+    # # printf ">>$key<<\n\r"
 
 
     stty -raw echo
