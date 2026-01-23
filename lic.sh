@@ -90,11 +90,12 @@ draw() {
                 unset draw_overwritten
                 actions_done_with=$selected
                 draw "
-Open-with...
-Move-to...
-Copy-to...
+Open_with...
+Move_to...
+Copy_to...
 Rename
-Create-link
+Create_hard_link
+Create_symbolic_link
 Compress
 Delete"
             # showmenu
@@ -103,6 +104,7 @@ Delete"
             # item in F2 menu is selected
             echo 3
             unset draw_overwritten
+            stty echo -raw
             # selection being done in F2 menu
             if [ $CURSOR == 0 ]; then
                 echo "OPENWITH"
@@ -117,19 +119,29 @@ Delete"
                 draw
             elif [ $CURSOR == 3 ]; then
                 echo "RENAME"
-                stty echo -raw
                 printf "\n\r"
                 read -p "New name: " newname
                 mv "$PWD/$actions_done_with" "$PWD/$newname"
                 draw
             elif [ $CURSOR == 4 ]; then
                 echo "CREATELINK"
+                printf "\n\r"
+                read -p "Link name: " newname
+                ln "$PWD/$actions_done_with" "$PWD/$newname"
                 draw
             elif [ $CURSOR == 5 ]; then
-                echo "COMPRESS"
+                echo "CREATESYMLINK"
+                printf "\n\r"
+                read -p "Link name: " newname
+                ln -s "$PWD/$actions_done_with" "$PWD/$newname"
                 draw
             elif [ $CURSOR == 6 ]; then
+                echo "COMPRESS"
+                gzip "$actions_done_with"
+                draw
+            elif [ $CURSOR == 7 ]; then
                 echo "DELETE"
+                rm "$actions_done_with"
                 draw
             fi
         fi
@@ -190,6 +202,29 @@ Delete"
         vi -y "$selected"
         draw
 
+    elif [ "$1$2$3$4" == '033133061065' ]; then
+        echo "F5"
+        echo "COPY"
+        copying="$PWD/$selected"
+        draw
+
+    elif [ "$1$2$3$4" == '033133061067' ]; then
+        echo "F6"
+        moving="$PWD/$selected"
+        draw
+
+    elif [ "$1$2$3$4" == '033133061070' ]; then
+        echo "F7"
+        printf "\n\r"
+        stty echo -raw
+        read -p "New directory name: " newname
+        mkdir "$newname"
+        draw
+    elif [ "$1$2$3$4" == '033133061071' ]; then
+        echo "F8"
+        rm "$selected"
+        draw
+
     elif [ "$1" == '177' ]; then
         notify-send "BACKSPACE"
         # label-01
@@ -211,8 +246,8 @@ Delete"
     fi
 
     # IMPLEMENTED:
-    # F1 2 3 4 5 6 7 8 9 10 ↑ ↓ ← → ↳ ␠ | F2: OW MV CP RN LINK COMP DL
-    #      ✔ ✔            ✔ ✔ ✔ ✔ ✔ ✔             ✔     ✔
+    # F1 2 3 4 5 6 7 8 9 10 ↑ ↓ ← → ↳ ␣ | F2: OW MV CP RN LKH LKS COMP DL
+    #      ✔ ✔ ✔ ✔ ✔ ✔    ✔ ✔ ✔ ✔ ✔ ✔             ✔  ✔  ✔   ✔   ✔    ✔  ✔
 
 
 
