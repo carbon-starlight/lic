@@ -13,9 +13,9 @@ draw() {
     fi
     # overwrite list w/ passed
     if [ -z "$1" ]; then
-        notify-send "qwf$1"
-        list=$(ls -hal $sortword)
-        list1=$(ls -a1 $sortword)
+        # notify-send "qwf$1"
+        list=$(ls -halp $sortword)
+        list1=$(ls -a1p $sortword)
     else
         list="$1"
         list1="$1"
@@ -63,6 +63,7 @@ draw() {
     if [ "$1" = '015' ] || [ "$1$2$3" = '033117121' ]; then
         # ENTER / F2
         echo "ENTER; CURSOR: $CURSOR"
+        CURSOR=0
 
         if [ -z "$draw_overwritten" ]; then
             # file or dir is selected
@@ -151,14 +152,14 @@ Delete"
         exit
     elif [ "$3" = '101' ]; then
         # UP
-        echo "UP"
+        # echo "UP"
         CURSOR=$((CURSOR - 1))
-        draw
+        draw "$draw_overwritten"
     elif [ "$3" = '102' ]; then
-        printf "DOWN\n\r"
+        # printf "DOWN\n\r"
         CURSOR=$((CURSOR + 1))
         draw "$draw_overwritten"
-        notify-send "continued"
+        # notify-send "continued"
     elif [ "$3" == '103' ]; then
         echo "RIGHT"
         ((sorting++))
