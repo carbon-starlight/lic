@@ -1,5 +1,13 @@
 CURSOR=2
 sorting=0
+
+ab() {
+    # Append to buffer that will be printed
+    b="$b$1"
+}
+# ab x
+# ab y
+# printf "$b"
 draw() {
     # clear
     stty -raw echo
@@ -21,29 +29,33 @@ draw() {
         list1="$1"
         draw_overwritten="$1"
     fi
-    echo "list: $list, list1: $list1"
+    # echo "list: $list, list1: $list1"
     selected=$(printf "$list1" | sed -n "$((CURSOR+1))"p)
     # selected=$(ls -a1 $sortword | sed -n "$((CURSOR+1))"p)
-    echo "Selected file: $selected"
+    # echo "Selected file: $selected"
     dirorf=$(printf "$list" | sed -n "$((CURSOR+2))"p | cut -c1)
-    echo "Is a dir: $dirorf"
+    # echo "Is a dir: $dirorf"
     # pwd
-    # printf ┌; printf '─%.0s' $(seq 1 $((COLUMNS - 2))); printf ┐; printf "\n"
-    printf ┌; printf $PWD; printf '─%.0s' $(seq 1 $((COLUMNS - 2 - $(printf $PWD | wc -c)))); printf ┐; printf "\n"
+    ab ┌; ab $PWD; ab $(printf '─%.0s' $(seq 1 $((COLUMNS - 2 - $(printf $PWD | wc -c))))); ab "┐\n"
     FILES=$(printf "$list" | cut -d ' ' -f 5-)  # -Gghl
     for i in $(seq 1 $((ROWS - 3))); do
           # [ $i == $CURSOR ]
-        if [ $((CURSOR + i)) -lt 1 ]; then printf │; if [ $i == 2 ]; then printf "\033[7m"; fi; printf ' %.0s' $(seq 1 $((COLUMNS - 2))); if [ $i == 2 ]; then printf "\033[0m"; fi; printf │; printf "\n"; continue; fi
+        if [ $((CURSOR + i)) -lt 1 ]; then ab │; if [ $i == 2 ]; then ab "\033[7m"; fi; ab $(printf' %.0s' $(seq 1 $((COLUMNS - 2)))); if [ $i == 2 ]; then ab "\033[0m"; fi; ab │; ab "\n"; continue; fi
+        ab │; 
         L=$(printf "$FILES" | sed -n "$((CURSOR+i))p")
-        printf │; 
-        if [ $i == 2 ]; then printf "\033[7m"; fi  # [ $i == $CURSOR ]
-        printf "$L" | tr -d '\n'; printf ' %.0s' $(seq 1 $((COLUMNS - 2 - ${#L}))); printf "│\n"
-        if [ $i == 2 ]; then printf "\033[0m"; fi
+        if [ $i == 2 ]; then ab "\033[7m"; fi  # [ $i == $CURSOR ]
+        ab "$(printf "$L" | tr -d '\n')"; ab "$(printf ' %.0s' $(seq 1 $((COLUMNS - 2 - ${#L}))))"
+            #  printf "$L" | tr -d '\n';       printf ' %.0s' $(seq 1 $((COLUMNS - 2 - ${#L}))); printf "│\n"
+        if [ $i == 2 ]; then ab "\033[0m"; fi
+        ab "│\n"
     done
     # searchline=🔎︎$searchq
     searchline=${searchq:+🔎︎$searchq}; searchline=${searchline:-─}
-    printf └; printf $searchline; printf '─%.0s' $(seq 1 $((COLUMNS -2 - $(printf $searchline | wc -m)))); printf ┘; printf "\n"
-    printf " \033[7mF1\033[0m Help  \033[7mF2\033[0m Menu  \033[7mF3\033[0m View  \033[7mF4\033[0m Edit  \033[7mF5\033[0m Copy  \033[7mF6\033[0m Move  \033[7mF7\033[0m New  \033[7mF8\033[0m Delete  \033[7mF9\033[0m Pull  \033[7mF10\033[0m Quit"
+    ab └; ab $searchline; ab $(printf '─%.0s' $(seq 1 $((COLUMNS -2 - $(printf $searchline | wc -m))))); ab "┘\n"
+    ab " \033[7mF1\033[0m Help  \033[7mF2\033[0m Menu  \033[7mF3\033[0m View  \033[7mF4\033[0m Edit  \033[7mF5\033[0m Copy  \033[7mF6\033[0m Move  \033[7mF7\033[0m New  \033[7mF8\033[0m Delete  \033[7mF9\033[0m Pull  \033[7mF10\033[0m Quit"
+    
+    printf "$b"
+    unset b
 
     stty raw -echo
     key=''
