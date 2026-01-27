@@ -10,7 +10,7 @@ ab() {
 # printf "$b"
 draw() {
     # clear
-    stty -raw echo
+    # stty -raw echo
     COLUMNS=$(tput cols)
     ROWS=$(tput lines)
     sabs=$(($sorting % 4))
@@ -39,25 +39,43 @@ draw() {
     ab ┌; ab $PWD; ab $(printf '─%.0s' $(seq 1 $((COLUMNS - 2 - $(printf $PWD | wc -c))))); ab "┐\n"
     FILES=$(printf "$list" | cut -d ' ' -f 5-)  # -Gghl
     for i in $(seq 1 $((ROWS - 3))); do
-          # [ $i == $CURSOR ]
-        if [ $((CURSOR + i)) -lt 1 ]; then ab │; if [ $i == 2 ]; then ab "\033[7m"; fi; ab $(printf' %.0s' $(seq 1 $((COLUMNS - 2)))); if [ $i == 2 ]; then ab "\033[0m"; fi; ab │; ab "\n"; continue; fi
+        if [ $((CURSOR + i)) -lt 1 ]; then 
+            ab │
+            if [ $i == 2 ]
+                then ab "\033[7m"
+            fi
+            ab $(printf' %.0s' $(seq 1 $((COLUMNS - 2))))
+            if [ $i == 2 ]
+                then ab "\033[0m"
+            fi
+            ab "│\n"; continue; 
+        fi
+        
         ab │; 
         L=$(printf "$FILES" | sed -n "$((CURSOR+i))p")
-        if [ $i == 2 ]; then ab "\033[7m"; fi  # [ $i == $CURSOR ]
+        
+        if [ $i == 2 ]
+            then ab "\033[7m"
+        fi  # [ $i == $CURSOR ]
+        
         ab "$(printf "$L" | tr -d '\n')"; ab "$(printf ' %.0s' $(seq 1 $((COLUMNS - 2 - ${#L}))))"
-            #  printf "$L" | tr -d '\n';       printf ' %.0s' $(seq 1 $((COLUMNS - 2 - ${#L}))); printf "│\n"
-        if [ $i == 2 ]; then ab "\033[0m"; fi
+        
+        if [ $i == 2 ]
+            then ab "\033[0m"; 
+        fi
+        
         ab "│\n"
     done
+    # date -Ins
     # searchline=🔎︎$searchq
     searchline=${searchq:+🔎︎$searchq}; searchline=${searchline:-─}
     ab └; ab $searchline; ab $(printf '─%.0s' $(seq 1 $((COLUMNS -2 - $(printf $searchline | wc -m))))); ab "┘\n"
     ab " \033[7mF1\033[0m Help  \033[7mF2\033[0m Menu  \033[7mF3\033[0m View  \033[7mF4\033[0m Edit  \033[7mF5\033[0m Copy  \033[7mF6\033[0m Move  \033[7mF7\033[0m New  \033[7mF8\033[0m Delete  \033[7mF9\033[0m Pull  \033[7mF10\033[0m Quit"
     
-    printf "$b"
+    printf "\n$b"
     unset b
 
-    stty raw -echo
+    # stty raw -echo
     key=''
     # echo q | read
     # echo awarting read
@@ -68,8 +86,8 @@ draw() {
     set -- $(dd bs=100 count=1 2> /dev/null | od -vAn -to1)
     stty "$saved_tty_settings" # restore
 
-    printf "| $1, $2, $3, $4, $5, $6 |"
-    printf ">$1<\n\r"
+    # printf "| $1, $2, $3, $4, $5, $6 |"
+    # printf ">$1<\n\r"
     # printf $key | hexdump -C
 
     if [ "$1" = '015' ] || [ "$1$2$3" = '033117121' ]; then
@@ -117,7 +135,7 @@ Delete"
             # item in F2 menu is selected
             echo 3
             unset draw_overwritten
-            stty echo -raw
+            # stty echo -raw
             # selection being done in F2 menu
             if [ $CURSOR == 0 ]; then
                 echo "OPENWITH"
@@ -160,7 +178,7 @@ Delete"
         fi
     elif [ "$1$2" = '033' ] || [ "$1$2$3$4" = '033133062061' ] || [ "$1" = '021' ]; then
         # ESC / F10 / ^q
-        stty echo
+        # stty echo
         exit
     elif [ "$3" = '101' ]; then
         # UP
@@ -229,7 +247,7 @@ Delete"
     elif [ "$1$2$3$4" == '033133061070' ]; then
         echo "F7"
         printf "\n\r"
-        stty echo -raw
+        # stty echo -raw
         read -p "New directory name: " newname
         mkdir "$newname"
         draw
@@ -294,11 +312,11 @@ Delete"
     # # printf ">>$key<<\n\r"
 
 
-    stty -raw echo
+    # stty -raw echo
 }
 
 showmenu() {
-    stty -raw echo
+    # stty -raw echo
     clear
     selected=$(echo "$FILES" | sed -n "$((CURSOR+1))p")
     printf ┌; printf '─%.0s' $(seq 1 $((COLUMNS - 2))); printf ┐; printf "\n"
